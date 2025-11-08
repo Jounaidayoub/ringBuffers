@@ -4,8 +4,9 @@
 typedef struct RingBuffer
 {
     int buffer[MAX];
-    int head;
-    int queue;
+    int tail;// from here we remove/dequee
+    int head;// here we addd more elements
+    int size;
 } RingBuffer;
 
 RingBuffer *init()
@@ -17,34 +18,50 @@ RingBuffer *init()
         exit(EXIT_FAILURE);
     }
 
-    buffer->head = buffer->queue = 0;
+    buffer->tail = buffer->head = buffer->size = 0;
 
     return buffer;
 }
-RingBuffer *RB_add(RingBuffer *b, int value)
+int entail(RingBuffer *b, int value)
 {
-
-    b->buffer[b->queue] = value;
-    b->queue = (++b->queue) % MAX;
-    printf(" %d has been added\n",value);
-    return b;
-}
-
-int RB_remove(RingBuffer *b)
-{
-    if (b->head == b->queue)
+    if (!b)
     {
-        printf("no element left to read !!");
+        printf("buffer not initialised");
+        return 0;
+    }
+    if (b->size == MAX)
+    {
+        printf("buffer is full :( ");
         return 0;
     }
 
-    int element = b->buffer[b->head];
+    b->buffer[b->head] = value;
     b->head = (++b->head) % MAX;
-    printf(" %d is removed \n",element);
-    return -1;
+    b->size++;
+    printf(" %d has been added\n", value);
+    return 1;
 }
+// returns the removed element
+int detail(RingBuffer *b)
+{
+    if (!b)
+    {
+        printf("tails is undefind");
+        exit(EXIT_FAILURE);
+    }
 
+    if (b->size == 0)
+    {
+        printf("head is empty :( ");
+        return 0;
+    }
 
+    int element = b->buffer[b->tail];
+    b->tail = (++b->tail) % MAX;
+    b->size--;
+    printf(" %d is removed \n", element);
+    return element;
+}
 
 int main(void)
 {
@@ -52,10 +69,13 @@ int main(void)
 
     for (int i = 0; i < 5; i++)
     {
-        buffer = RB_add(buffer, i);
+        entail(buffer, i);
     }
 
-    while(RB_remove(buffer));
+    detail(buffer);
+    detail(buffer);
+    detail(buffer);
+    detail(buffer);
 
     printf("\nHello, World! \n");
     return 0;
