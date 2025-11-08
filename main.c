@@ -22,7 +22,7 @@ RingBuffer *init()
 
     return buffer;
 }
-int entail(RingBuffer *b, int value)
+int enqueue(RingBuffer *b, int value)
 {
     if (!b)
     {
@@ -36,13 +36,13 @@ int entail(RingBuffer *b, int value)
     }
 
     b->buffer[b->head] = value;
-    b->head = (++b->head) % MAX;
+    b->head = (++b->head) %  MAX;
     b->size++;
     printf(" %d has been added\n", value);
     return 1;
 }
 // returns the removed element
-int detail(RingBuffer *b)
+int dequeue(RingBuffer *b)
 {
     if (!b)
     {
@@ -69,13 +69,13 @@ int main(void)
 
     for (int i = 0; i < 5; i++)
     {
-        entail(buffer, i);
+        enqueue(buffer, i);
     }
 
-    detail(buffer);
-    detail(buffer);
-    detail(buffer);
-    detail(buffer);
+    dequeue(buffer);
+    dequeue(buffer);
+    dequeue(buffer);
+    dequeue(buffer);
 
     printf("\nHello, World! \n");
     return 0;
