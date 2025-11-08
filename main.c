@@ -63,20 +63,42 @@ int dequeue(RingBuffer *b)
     return element;
 }
 
+void afficher(RingBuffer *b)
+{
+    if (!b)
+    {
+        printf("Buffer not initialized\n");
+        return;
+    }
+    if (b->size == 0)
+    {
+        printf("Buffer is empty\n");
+        return;
+    }
+    printf("Buffer elements : ");
+    for (int i = 0; i < b->size; i++)
+    {
+        int ind = (b->tail + i) % MAX;
+        printf("%d ", b->buffer[ind]);
+    }
+    printf("\n");
+}
+
 int main(void)
 {
     RingBuffer *buffer = init();
 
+    afficher(buffer);
     for (int i = 0; i < 5; i++)
     {
         enqueue(buffer, i);
     }
-
     dequeue(buffer);
     dequeue(buffer);
     dequeue(buffer);
     dequeue(buffer);
-
+    afficher(buffer);
+    
     printf("\nHello, World! \n");
     return 0;
 }
