@@ -142,7 +142,7 @@ int pop_d(pile_double *pile)
 {
     if (est_vide_d(*pile))
     {
-        printf("la pile droite est vide !!");
+        printf("la pile droite est vide !! \n");
         return 0;
     }
 
@@ -163,6 +163,38 @@ int pop_g(pile_double *pile)
     element = pile->tab[pile->tete_g--];
     return element;
 }
+
+void afficher_g(pile_double *p)
+{
+
+    if (est_vide_g(*p))
+    {
+        printf("la pile gauche est vide\n");
+        return;
+    }
+    if (!est_vide_d(*p))
+    {
+        printf("\n you need the second stack to be empty \n");
+        return;
+    }
+
+    printf("Elements de la pile gauche : ");
+
+    while (!est_vide_g(*p))
+    {
+        int val = pop_g(p);
+        printf("%d ", val);
+        push_d(p, val);
+    }
+    printf("\n");
+
+    while (!est_vide_d(*p))
+    {
+        int val = pop_d(p);
+        push_g(p, val);
+    }
+}
+
 int main(void)
 {
 
@@ -172,24 +204,29 @@ int main(void)
     {
         push_g(pile, i);
     }
+    afficher_g(pile);
     for (int i = 4; i < 8; i++)
     {
         push_d(pile, i);
     }
+    afficher_g(pile);
 
     pop_d(pile);
+    afficher_g(pile);
     pop_d(pile);
 
     pop_g(pile);
 
-    push_d(pile, 89);
-    push_d(pile, 89);
-    push_d(pile, 89);
+    afficher_g(pile);
+    // push_d(pile, 89);
+    // push_d(pile, 89);
+    // push_d(pile, 89);
 
-    push_g(pile, 12);
-    push_g(pile, 12);
-    push_g(pile, 12);
-    push_g(pile, 12);
+    // push_g(pile, 12);
+    // push_g(pile, 12);
+    // push_g(pile, 12);
+    // push_g(pile, 12);
+    // afficher_g(pile);
 
     // RingBuffer *buffer = init();
 
