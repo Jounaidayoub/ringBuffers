@@ -4,8 +4,8 @@
 typedef struct RingBuffer
 {
     int buffer[MAX];
-    int tail;// from here we remove/dequee
-    int head;// here we addd more elements
+    int tail; // from here we remove/dequee
+    int head; // here we addd more elements
     int size;
 } RingBuffer;
 
@@ -36,7 +36,7 @@ int enqueue(RingBuffer *b, int value)
     }
 
     b->buffer[b->head] = value;
-    b->head = (++b->head) %  MAX;
+    b->head = (++b->head) % MAX;
     b->size++;
     printf(" %d has been added\n", value);
     return 1;
@@ -84,21 +84,88 @@ void afficher(RingBuffer *b)
     printf("\n");
 }
 
+typedef struct pile_double
+{
+    int tab[MAX];
+    int tete_g; // tete gauche
+    int tete_d; // tete droit
+} pile_double;
+
+pile_double *init_pd()
+{
+    pile_double *pile = (pile_double *)malloc(sizeof(pile_double));
+    pile->tete_g = -1;
+    pile->tete_d = MAX;
+    return pile;
+}
+
+int est_vide_d(pile_double pile)
+{
+    return (int)(pile.tete_d == MAX);
+}
+
+int est_vide_g(pile_double pile)
+{
+    return (int)(pile.tete_g == -1);
+}
+
+int est_Plain(pile_double *p)
+{
+    return p->tete_d + 1 == p->tete_g;
+}
+
+int push_d(pile_double *pile, int valeur)
+{
+    if (est_Plain(pile))
+    {
+        printf("la pile est plain !");
+        return 0;
+    }
+
+    pile->tab[--pile->tete_d] = valeur;
+    return 1;
+}
+
+int push_g(pile_double *pile, int valeur)
+{
+    if (est_Plain(pile))
+    {
+        printf("la pile est plain !");
+        return 0;
+    }
+
+    pile->tab[++pile->tete_g] = valeur;
+    return 1;
+}
+
 int main(void)
 {
-    RingBuffer *buffer = init();
-
-    afficher(buffer);
-    for (int i = 0; i < 5; i++)
-    {
-        enqueue(buffer, i);
-    }
-    dequeue(buffer);
-    dequeue(buffer);
-    dequeue(buffer);
-    dequeue(buffer);
-    afficher(buffer);
     
-    printf("\nHello, World! \n");
+    pile_double *pile=init_pd();
+
+    for (int i = 0; i < 4; i++)
+    {
+        push_g(pile,i);
+    }
+     for (int i = 0; i < 4; i++)
+    {
+        push_d(pile,i);
+    }
+
+
+    // RingBuffer *buffer = init();
+
+    // afficher(buffer);
+    // for (int i = 0; i < 5; i++)
+    // {
+    //     enqueue(buffer, i);
+    // }
+    // dequeue(buffer);
+    // dequeue(buffer);
+    // dequeue(buffer);
+    // dequeue(buffer);
+    // afficher(buffer);
+
+    // printf("\nHello, World! \n");
     return 0;
 }
