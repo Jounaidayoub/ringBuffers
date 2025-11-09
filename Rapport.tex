@@ -1,0 +1,173 @@
+\documentclass[a4paper, 11pt]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage{textcomp} % Required for some symbols
+\usepackage[utf8]{inputenc} % Specify input encoding
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Listings settings
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    inputencoding=utf8, % Handle UTF-8 characters
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    language=C
+}
+\lstset{style=mystyle}
+
+% Document settings
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\title{\textbf{Compte Rendu : Structures de Données Avancées}}
+\author{Module : Algorithmique et Programmation \\ Année : 1ère Année ILISI}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\hrule
+
+\section*{Introduction}
+
+Ce document présente l'analyse, la conception et l'implémentation de plusieurs structures de données, conformément aux exigences du travail pratique. Il est divisé en deux problèmes principaux :
+\begin{enumerate}
+    \item L'implémentation d'une \textbf{file} et d'une \textbf{liste} à l'aide d'un tableau circulaire.
+    \item L'implémentation de \textbf{deux piles} dans un seul et même tableau.
+\end{enumerate}
+Pour chaque problème, nous suivrons une démarche structurée : analyse du problème, proposition d'une solution, description des algorithmes et enfin, présentation du programme final avec une démonstration de son fonctionnement.
+
+\hrule\vspace{1cm}
+
+\section{Problème 1 : Le Tableau Circulaire}
+
+\subsection{I. Analyse du Problème}
+Le premier problème nous demande d'utiliser le concept de \textbf{tableau circulaire} pour implémenter une \textbf{File} (structure de type FIFO). L'objectif est de gérer un espace mémoire fixe de manière efficace.
+
+\subsection{II. Solution Proposée}
+Pour la file, nous utilisons un tableau \texttt{buffer} et trois variables de contrôle : \texttt{tete}, \texttt{queue}, et \texttt{taille}. La structure est définie comme suit :
+\begin{lstlisting}
+typedef struct FileCirculaire
+{
+    int buffer[MAX];
+    int queue; // La queue, d'ou on defile
+    int tete;  // La tete, ou on enfile
+    int taille;
+} FileCirculaire;
+\end{lstlisting}
+
+\subsection{III. Algorithmes et Exemples}
+Une file est une structure de données de type \textbf{premier entré, premier sorti (FIFO)}.
+
+\subsubsection*{\texttt{enfiler(file, valeur)}}
+L'ajout se fait à la \texttt{tete}.
+\begin{algorithmic}
+\If{file.taille = MAX}
+    \State Afficher "Erreur: File pleine"
+\Else
+    \State file.buffer[file.tete] $\leftarrow$ valeur
+    \State file.tete $\leftarrow$ (file.tete + 1) \textbf{mod} MAX
+    \State file.taille $\leftarrow$ file.taille + 1
+\EndIf
+\end{algorithmic}
+Exemple d'utilisation :
+\begin{lstlisting}
+FileCirculaire *file = initialiser_file();
+enfiler(file, 10); // Ajoute 10
+enfiler(file, 20); // Ajoute 20
+\end{lstlisting}
+
+\subsubsection*{\texttt{defiler(file)}}
+Le retrait se fait à la \texttt{queue}.
+\begin{algorithmic}
+\If{file.taille = 0}
+    \State Afficher "Erreur: File vide"
+\Else
+    \State element $\leftarrow$ file.buffer[file.queue]
+    \State file.queue $\leftarrow$ (file.queue + 1) \textbf{mod} MAX
+    \State file.taille $\leftarrow$ file.taille - 1
+    \State \Return element
+\EndIf
+\end{algorithmic}
+
+\subsection{IV. Programme et Démonstration}
+Le code source complet se trouve en annexe. La fonction \texttt{demonstration\_file\_circulaire()} montre son fonctionnement.
+
+\section{Problème 2 : Deux Piles dans un Tableau}
+
+\subsection{I. Analyse du Problème}
+Le second problème consiste à implémenter deux piles distinctes en n'utilisant qu'un seul tableau pour optimiser l'utilisation de l'espace.
+
+\subsection{II. Solution Proposée}
+La solution consiste à faire croître les deux piles en sens opposé. La pile gauche part de l'indice \texttt{0} et la pile droite de \texttt{MAX-1}. La structure est :
+\begin{lstlisting}
+typedef struct DoublePile
+{
+    int tab[MAX];
+    int sommet_g; // Sommet de la pile gauche
+    int sommet_d; // Sommet de la pile droite
+} DoublePile;
+\end{lstlisting}
+
+\subsection{III. Algorithmes et Exemples}
+Une pile est une structure de données de type \textbf{dernier entré, premier sorti (LIFO)}.
+
+\subsubsection*{\texttt{empiler\_g(pile, valeur)}}
+\begin{algorithmic}
+\If{pile.sommet\_g + 1 = pile.sommet\_d}
+    \State Afficher "Erreur: Piles pleines"
+\Else
+    \State pile.sommet\_g $\leftarrow$ pile.sommet\_g + 1
+    \State pile.tab[pile.sommet\_g] $\leftarrow$ valeur
+\EndIf
+\end{algorithmic}
+Exemple d'utilisation :
+\begin{lstlisting}
+DoublePile *pile = initialiser_dp();
+empiler_g(pile, 5);  // Ajoute 5 a gauche
+empiler_d(pile, 99); // Ajoute 99 a droite
+\end{lstlisting}
+
+\subsection{IV. Programme et Démonstration}
+Le code de la \texttt{DoublePile} est également en annexe. La fonction \texttt{demonstration\_double\_pile()} illustre son utilisation.
+
+\newpage
+\appendix
+\section{Code Source Complet : \texttt{main.c}}
+\lstinputlisting{main.c}
+
+\end{document}
