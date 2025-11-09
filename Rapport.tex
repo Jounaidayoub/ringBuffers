@@ -15,6 +15,8 @@
 \usepackage[noend]{algpseudocode}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{minted}
+\usepackage{pdfpages}
 
 % Listings settings
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -53,14 +55,9 @@
     urlcolor=cyan,
 }
 
-\title{\textbf{Compte Rendu : Structures de Données Avancées}}
-\author{Module : Algorithmique et Programmation \\ Année : 1ère Année ILISI}
-\date{\today}
-
 \begin{document}
 
-\maketitle
-\hrule
+\includepdf{page de gardeSDD[1].pdf}
 
 \section*{Introduction}
 
@@ -72,6 +69,335 @@ Ce document présente l'analyse, la conception et l'implémentation de plusieurs
 Pour chaque problème, nous suivrons une démarche structurée : analyse du problème, proposition d'une solution, description des algorithmes et enfin, présentation du programme final avec une démonstration de son fonctionnement.
 
 \hrule\vspace{1cm}
+\section{Définitions}
+\vspace{0.5cm}
+\begin{itemize}
+\item\textbf{Pile (Stack) :}
+Une pile est une structure de données linéaire fonctionnant selon le principe LIFO (Last In, First Out) : le dernier élément ajouté est le premier à être retiré. Les opérations principales sont empiler (push) et dépiler (pop).
+
+\item\textbf{File (Queue) :}
+Une file est une structure de données linéaire suivant le principe FIFO (First In, First Out) : le premier élément inséré est le premier à sortir. Les opérations principales sont enfiler (enqueue) et défiler (dequeue).
+
+\item\textbf{Tableau (Array) :}
+Un tableau est une structure de données statique qui stocke un ensemble d’éléments de même type dans des cases contiguës en mémoire. L’accès à un élément se fait directement par son indice.
+
+\item\textbf{Pointeur :}
+Un pointeur est une variable qui contient l’adresse mémoire d’une autre variable. Il permet une gestion dynamique de la mémoire et la création de structures chaînées comme les listes.
+
+\item\textbf{Tableau circulaire :}
+Un tableau circulaire est une représentation de file ou de liste où la fin du tableau est reliée au début. Cette approche évite le gaspillage de mémoire et permet une utilisation continue du tableau.
+
+\item\textbf{Pile partagée (ou pile double) :}
+Une pile partagée est une technique où un seul tableau est divisé en deux zones : une zone pour les éléments de la pile principale et une autre pour le stockage temporaire. Cela permet une meilleure utilisation de la mémoire disponible.
+\end{itemize}
+\section{Fonctions de manipulation}
+NB : dans ce qui suit nous considérons que les bibliothèques standards ont été déclarées.
+\begin{lstlisting}
+#include <stdio.h>
+#include <stdlib.h>
+\end{lstlisting}
+\subsection{Les Listes}
+\begin{itemize}
+    \item Définition de la structure
+    \begin{lstlisting}
+    #define max_elem 20
+    //structure de la liste
+    typedef struct
+    {
+       int tab[max_elem];
+       int ind_DR;
+    } Liste;
+        
+    \end{lstlisting}
+    \item Les fonctions
+    \begin{lstlisting}
+//Initialisation
+int Init_TListe(Liste *Maliste)
+{
+  if (!Maliste)
+  {
+    printf("la liste n'existe pas");
+    exit(-1);
+  }
+  Maliste->ind_DR = -1;
+  return 1;
+}
+
+//Liste est vide
+int Est_Vide_TListe(Liste Maliste)
+{
+  return (Maliste.ind_DR == -1);
+}
+
+//Taille
+int Taille_TListe(Liste Maliste)
+{
+  return Maliste.ind_DR + 1;
+}
+
+//Insertion
+int Inserer_TListe( Liste *Maliste,int elm, int pos)
+{
+  if (pos >Taille_TListe(*Maliste) || pos < 0) {
+    printf("\nLa position est invalide ");
+    return 0;
+  }
+  if (Maliste->ind_DR >= max_elem - 1) {
+    printf("\nListe pleine");
+    return 0;
+  }
+
+  int ind;
+  for (ind = Maliste->ind_DR; ind >= pos; ind--) {
+    Maliste->tab[ind + 1] = Maliste->tab[ind];
+  }
+  Maliste->tab[pos] = elm;
+  Maliste->ind_DR++;
+  return 1;
+}
+
+//Supprimer
+int Supprimer_TListe(Liste *Maliste ,int pos)
+{
+  if (Est_Vide_TListe(*Maliste) || pos < 0 || pos > Maliste->ind_DR)
+    exit(-1);
+
+  int ind;
+  for (ind = pos; ind < Maliste->ind_DR; ind++)
+  {
+    Maliste->tab[ind] = Maliste->tab[ind + 1];
+  }
+  Maliste->ind_DR--;
+  return 1;
+}
+//Afficher
+void Afficher_TListe(Liste Maliste)
+{
+  if (Est_Vide_TListe(Maliste)) {
+    printf("\nListe vide\n");
+    return;
+  }
+  printf("\nContenu de la liste: [");
+  int ind;
+  for (ind = 0; ind <= Maliste.ind_DR; ind++) {
+    printf("%d", Maliste.tab[ind]);
+    if (ind < Maliste.ind_DR)
+      printf(", ");
+  }
+  printf("]\n");
+}
+        
+    \end{lstlisting}
+\end{itemize}
+\subsection{Les Piles}
+\begin{itemize}
+    \item Définition de la structure
+    \begin{lstlisting}
+#define Elm_Max 20
+// structure de la pile :
+
+typedef struct
+{
+    int Tab[Elm_Max];
+    int sommet ;
+}Pile;
+        
+    \end{lstlisting}
+    \item Les fonctions
+    \begin{lstlisting}
+//Créer et allouer  une nouvelle pile
+Pile* Cree_TPile() {
+    Pile *Mapile;
+    Mapile = (Pile*)malloc(sizeof(Pile));  // Allocation de la memoire
+    if (!Mapile) {
+        printf("Erreur de memoire ");
+        exit(0);
+    }
+    return Mapile;
+}
+
+//Initialiser la pile
+int Init_Tpile(Pile *MaPile)
+{
+    // test  existence de la pile
+    if(!MaPile)
+    {
+        printf("La pile n'existe pas : \n");
+        exit(-1);
+    }
+        MaPile-> sommet = -1 ;
+        return((int)1);
+}
+
+//Vérifier si la pile est vide
+int Est_Vide_Tpile( Pile MaPile)
+{
+
+    return((int)MaPile.sommet== -1);
+
+}
+
+int Taille_Tpile( Pile MaPile)
+{
+    return((int)(MaPile.sommet+1));
+
+}
+//Vérifier si la pile est pleine
+int Est_Sature_Tpile(Pile MaPile)
+{
+    return((int) MaPile.sommet==(Elm_Max-1));
+}
+//Empiler
+int Empiler_Tpile( Pile *MaPile , int Valeur)
+{
+    // test d'existence
+    if(!MaPile) { printf("\n n' existe pas");  exit(-1);  }
+    // test saturation
+    if(Est_Sature_Tpile(*MaPile)) return((int)0);
+    MaPile-> Tab[++MaPile->sommet] = Valeur ;
+    return((int)1);
+
+}
+//Dépiler
+int Depiler_Tpile(Pile *MaPile)
+{
+
+    if(!MaPile) { printf("\ la pile n'existe pas"); exit(0); }
+    // cas ou la pile est vide
+    if(Est_Vide_Tpile(*MaPile)) return((int)-1);
+    MaPile->sommet--;
+    return((int)1);
+
+}
+//Afficher
+void Afficher_Tpile (Pile MaPile)
+{
+    if(Est_Vide_Tpile(MaPile)) { printf(" \n la pile est vide"); exit(0); }
+    while(MaPile.sommet >= 0 )
+        {
+            printf("|%d|", MaPile.Tab[MaPile.sommet]);
+            Depiler_Tpile(&MaPile);
+
+        }
+}      
+    \end{lstlisting}
+\end{itemize}
+\subsection{Les files}
+\begin{itemize}
+    \item Définition de la structure
+    \begin{lstlisting}
+#define MaxElem 10
+
+typedef struct {
+int Tab[MaxElem];
+int debut;
+int fin;
+}TFile;
+    \end{listing}
+    \item Les fonctions
+    \begin{lstlisting}
+//Initialisation du file
+TFile Init_Tfile(TFile *Mafile)
+{
+    if(!Mafile){
+        printf("erreur allocation");
+        exit(-1);
+    }
+    Mafile->debut=Mafile->fin=-1;
+    return((int)1);
+}
+//creation du file
+TFile *Creer_Tfile()
+{
+    TFile *Mafile;
+    //allocation memoire
+    Mafile=(TFile*)malloc(sizeof(TFile));
+    if(!Mafile){
+         printf("erreur allocation");
+        exit(-1);
+    }
+    return((TFile*)Mafile);
+}
+//Vérifier s'il est vide
+int Est_vide_Tfile(TFile *Mafile)
+{
+    if(Mafile->debut==-1)&&(Mafile->fin==-1)
+        return((int)1);
+    return((int)0);
+}
+//Vérifier s'il est pleine
+int Est_saturee(TFile *Mafile)
+{
+    return((int)Mafile->fin-Mafile->debut+1==MaxElem);
+}
+//Enfiler
+int Enfiler_Tfile(TFile *Mafile, int valeur)
+{
+    //si la file n'existe pas
+    if(!Mafile){
+        printf("Erreur");
+        exit(-1);
+    }
+    if(Est_saturee(*Mafile))
+        return((int)-1);
+    if(Est_vide_Tfile(*Mafile)){
+        Mafile->Tab[0]=valeur;
+        Mafile->debut=Mafile->fin=0;
+        return((int)2);
+    }
+
+}
+//Défiler
+int Defiler_Tfile(TFile *Mafile)
+{
+    if(!Mafile){
+        printf("Erreur allocation");
+        return((int)-2);
+    }
+    if(Est_vide_Tfile(Mafile))
+        return((int)-1);
+    //si la file contient un seul élement
+    if(Mafile->debut==Mafile->fin)
+        Init_Tfile(Mafile);
+    Mafile->debut++;
+    return((int)1);
+}
+int Taille_Tfile(TFile *Mafile)
+{
+    return((int)(Mafile->fin - Mafile->debut+1));
+}
+// Affichage du contenu de la file
+void Afficher_Tfile(TFile *Mafile)
+{
+    int i;
+    
+    // Vérifier si la file existe
+    if(!Mafile) {
+        printf("Erreur: File inexistante\n");
+        return;
+    }
+    
+    // Vérifier si la file est vide
+    if(Est_vide_Tfile(Mafile)) {
+        printf("La file est vide\n");
+        return;
+    }
+    
+    // Afficher les informations de la file
+    printf("Contenu de la file:\n");
+    printf("Debut: %d, Fin: %d, Taille: %d\n", 
+           Mafile->debut, Mafile->fin, Taille_Tfile(Mafile));
+    
+    printf("Elements: [ ");
+    for(i = Mafile->debut; i <= Mafile->fin; i++) {
+        printf("%d ", Mafile->Tab[i]);
+    }
+    printf("]\n");
+}
+
+    \end{lstlisting}
+    
+\end{itemize}
 
 \section{Problème 1 : Le Tableau Circulaire}
 
