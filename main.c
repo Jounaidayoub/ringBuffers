@@ -109,16 +109,16 @@ int est_vide_g(pile_double pile)
     return (int)(pile.tete_g == -1);
 }
 
-int est_Plain(pile_double *p)
+int est_Plain(pile_double p)
 {
-    return p->tete_d + 1 == p->tete_g;
+    return p.tete_g + 1 == p.tete_d;
 }
 
 int push_d(pile_double *pile, int valeur)
 {
-    if (est_Plain(pile))
+    if (est_Plain(*pile))
     {
-        printf("la pile est plain !");
+        printf("\nla pile est plain ! \n");
         return 0;
     }
 
@@ -128,9 +128,9 @@ int push_d(pile_double *pile, int valeur)
 
 int push_g(pile_double *pile, int valeur)
 {
-    if (est_Plain(pile))
+    if (est_Plain(*pile))
     {
-        printf("la pile est plain !");
+        printf("\nla pile est plain ! \n");
         return 0;
     }
 
@@ -138,20 +138,58 @@ int push_g(pile_double *pile, int valeur)
     return 1;
 }
 
+int pop_d(pile_double *pile)
+{
+    if (est_vide_d(*pile))
+    {
+        printf("la pile droite est vide !!");
+        return 0;
+    }
+
+    int element;
+    element = pile->tab[pile->tete_d++];
+    return element;
+}
+
+int pop_g(pile_double *pile)
+{
+    if (est_vide_g(*pile))
+    {
+        printf("la pile droite est vide !!");
+        return 0;
+    }
+
+    int element;
+    element = pile->tab[pile->tete_g--];
+    return element;
+}
 int main(void)
 {
-    
-    pile_double *pile=init_pd();
 
-    for (int i = 0; i < 4; i++)
+    pile_double *pile = init_pd();
+
+    for (int i = 32; i < 36; i++)
     {
-        push_g(pile,i);
+        push_g(pile, i);
     }
-     for (int i = 0; i < 4; i++)
+    for (int i = 4; i < 8; i++)
     {
-        push_d(pile,i);
+        push_d(pile, i);
     }
 
+    pop_d(pile);
+    pop_d(pile);
+
+    pop_g(pile);
+
+    push_d(pile, 89);
+    push_d(pile, 89);
+    push_d(pile, 89);
+
+    push_g(pile, 12);
+    push_g(pile, 12);
+    push_g(pile, 12);
+    push_g(pile, 12);
 
     // RingBuffer *buffer = init();
 
