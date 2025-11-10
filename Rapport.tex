@@ -408,10 +408,65 @@ void Afficher_Tfile(TFile *Mafile)
 \section{Problème 1 : Le Tableau Circulaire}
 
 \subsection{I. Analyse du Problème}
-Le premier problème nous demande d'utiliser le concept de \textbf{tableau circulaire} pour implémenter une \textbf{File} (structure de type FIFO). L'objectif est de gérer un espace mémoire fixe de manière efficace.
+
+Le premier problème nous demande d'utiliser le concept de \textbf{tableau circulaire} pour implémenter une \textbf{File} (structure de type FIFO - First In, First Out). L'objectif est de gérer un espace mémoire fixe de manière efficace tout en évitant le gaspillage de mémoire.
+
+\subsubsection*{La Problématique du Tableau Linéaire}
+Dans une implémentation classique d'une file avec un tableau linéaire, nous rencontrons un problème majeur : lorsque nous enfilons et défilons des éléments, les indices de \texttt{queue} et \texttt{tete} avancent continuellement vers la fin du tableau. Même si nous défilons des éléments et libérons ainsi de l'espace au début du tableau, cet espace ne peut plus être réutilisé car les indices ne reviennent jamais en arrière. Ceci conduit à une situation où le tableau peut sembler plein alors qu'en réalité, de nombreuses positions au début sont vacantes.
+
+\textbf{Exemple illustratif :} Considérons un tableau de taille 5. Après avoir enfilé 5 éléments puis défilé 3 éléments, nous avons 3 positions vides au début du tableau (indices 0, 1, 2), mais la \texttt{tete} pointe vers l'indice 5 (hors limite). Le tableau ne peut plus accepter de nouveaux éléments même s'il a de l'espace disponible.
+
+\subsubsection*{Le Concept du Tableau Circulaire}
+Le tableau circulaire résout ce problème en créant une abstraction où la fin du tableau est conceptuellement reliée au début, formant ainsi un cercle. Cette circularité est réalisée grâce à l'opération modulo (\texttt{\%}). Lorsqu'un indice atteint la fin du tableau (MAX), il "reboucle" automatiquement vers le début (indice 0).
+
+\textbf{La circulation en pratique :}
+\begin{itemize}
+    \item Quand \texttt{tete = MAX - 1} (dernière position) et nous enfilons un élément, la nouvelle position de \texttt{tete} devient : \texttt{(MAX - 1 + 1) \% MAX = 0}
+    \item De même pour \texttt{queue}, si elle est à la position \texttt{MAX - 1} et nous défilons, elle revient à 0
+    \item Cette opération modulo assure que les indices restent toujours dans l'intervalle \texttt{[0, MAX-1]}
+\end{itemize}
+
+\textbf{Exemple de circulation :} Avec \texttt{MAX = 5}, imaginons la séquence suivante :
+\begin{enumerate}
+    \item Initialement : \texttt{queue = 0, tete = 0, taille = 0}
+    \item Enfiler 10, 20, 30, 40, 50 : \texttt{queue = 0, tete = 0, taille = 5} (tete revient à 0 après avoir atteint 4)
+    \item La file est maintenant : [10, 20, 30, 40, 50]
+    \item Défiler deux fois (10 et 20) : \texttt{queue = 2, tete = 0, taille = 3}
+    \item Enfiler 60 : \texttt{queue = 2, tete = 1, taille = 4}
+    \item L'élément 60 occupe l'indice 0 (position libérée par 10)
+    \item Enfiler 70 : \texttt{queue = 2, tete = 2, taille = 5}
+    \item L'élément 70 occupe l'indice 1 (position libérée par 20)
+\end{enumerate}
+
+\subsubsection*{La Condition de File Pleine et Prévention de l'Écrasement}
+Une question cruciale se pose : comment distinguer une file vide d'une file pleine ? Dans les deux cas, \texttt{tete} et \texttt{queue} pourraient pointer vers la même position.
+
+\textbf{Solution adoptée :} Nous maintenons une variable \texttt{taille} qui compte le nombre d'éléments présents. Cette approche nous permet de :
+\begin{itemize}
+    \item Détecter une file pleine : \texttt{taille == MAX}
+    \item Détecter une file vide : \texttt{taille == 0}
+    \item Éviter l'écrasement : Avant d'enfiler, nous vérifions si \texttt{taille < MAX}
+\end{itemize}
+
+\textbf{Prévention de l'écrasement - La condition \texttt{tete + 1 = queue} :}
+Une approche alternative (non utilisée ici mais importante à comprendre) consiste à laisser toujours une case vide dans le tableau. Dans ce cas, la file est considérée pleine quand \texttt{(tete + 1) \% MAX == queue}. Cette condition signifie que si nous ajoutons un élément de plus, la \texttt{tete} rattraperait la \texttt{queue}, écrasant ainsi l'élément le plus ancien qui n'a pas encore été défilé. En maintenant cette case vide, nous créons une "zone tampon" qui garantit qu'il n'y a jamais de collision entre \texttt{tete} et \texttt{queue} lors des opérations normales.
+
+\textbf{Exemple de prévention :} Avec \texttt{MAX = 5}, si \texttt{queue = 2} et \texttt{tete = 1}, alors \texttt{(tete + 1) \% MAX = 2 = queue}. Nous ne pouvons pas enfiler car cela écraserait l'élément à l'indice 2 qui n'a pas encore été défilé.
+
+Dans notre implémentation, nous utilisons la variable \texttt{taille} qui est plus intuitive et permet d'utiliser toute la capacité du tableau (MAX éléments au lieu de MAX-1).
 
 \subsection{II. Solution Proposée}
-Pour la file, nous utilisons un tableau \texttt{buffer} et trois variables de contrôle : \texttt{tete}, \texttt{queue}, et \texttt{taille}. La structure est définie comme suit :
+
+Pour implémenter la file circulaire, nous utilisons un tableau \texttt{buffer} de taille fixe \texttt{MAX} et trois variables de contrôle essentielles :
+
+\begin{itemize}
+    \item \texttt{buffer[MAX]} : Le tableau qui stocke les éléments de la file
+    \item \texttt{queue} : L'indice du premier élément (front), d'où on défile les éléments
+    \item \texttt{tete} : L'indice de la prochaine position libre (rear), où on enfile les nouveaux éléments
+    \item \texttt{taille} : Le nombre actuel d'éléments dans la file
+\end{itemize}
+
+La structure est définie comme suit :
 \begin{lstlisting}
 typedef struct FileCirculaire
 {
@@ -422,80 +477,562 @@ typedef struct FileCirculaire
 } FileCirculaire;
 \end{lstlisting}
 
-\subsection{III. Algorithmes et Exemples}
-Une file est une structure de données de type \textbf{premier entré, premier sorti (FIFO)}.
+\textbf{Invariants de la structure :}
+\begin{itemize}
+    \item \texttt{0 <= queue < MAX}
+    \item \texttt{0 <= tete < MAX}
+    \item \texttt{0 <= taille <= MAX}
+    \item Si \texttt{taille = 0}, la file est vide
+    \item Si \texttt{taille = MAX}, la file est pleine
+    \item Les éléments valides occupent les positions \texttt{queue, (queue+1)\%MAX, ..., (queue+taille-1)\%MAX}
+\end{itemize}
 
-\subsubsection*{\texttt{enfiler(file, valeur)}}
-L'ajout se fait à la \texttt{tete}.
+\subsection{III. Algorithmes et Exemples}
+
+Une file est une structure de données de type \textbf{premier entré, premier sorti (FIFO)}. Le premier élément ajouté est le premier à être retiré, comme une file d'attente dans la vie réelle.
+
+\subsubsection*{\texttt{enfiler(file, valeur)} - Ajouter un élément}
+
+L'opération d'enfilage consiste à ajouter un nouvel élément à l'arrière de la file (à la position \texttt{tete}).
+
+\textbf{Algorithme détaillé :}
 \begin{algorithmic}
 \If{file.taille = MAX}
     \State Afficher "Erreur: File pleine"
+    \State \Return Échec
 \Else
     \State file.buffer[file.tete] $\leftarrow$ valeur
-    \State file.tete $\leftarrow$ (file.tete + 1) \textbf{mod} MAX
+    \State file.tete $\leftarrow$ (file.tete + 1) \textbf{ mod } MAX
     \State file.taille $\leftarrow$ file.taille + 1
+    \State \Return Succès
 \EndIf
 \end{algorithmic}
-Exemple d'utilisation :
+
+\textbf{Analyse pas à pas de l'opération :}
+\begin{enumerate}
+    \item \textbf{Vérification de saturation :} Avant toute modification, nous vérifions si \texttt{taille == MAX}. Si c'est le cas, le tableau est complètement rempli et nous ne pouvons pas ajouter d'élément sans écraser des données existantes.
+    \item \textbf{Insertion :} Nous plaçons la nouvelle valeur à la position \texttt{tete}
+    \item \textbf{Avancement circulaire :} Nous calculons la nouvelle position de \texttt{tete} avec \texttt{(tete + 1) \% MAX}. Cette opération modulo assure que si \texttt{tete} était à \texttt{MAX-1}, elle revient à 0.
+    \item \textbf{Mise à jour du compteur :} Nous incrémentons \texttt{taille} pour refléter l'ajout du nouvel élément.
+\end{enumerate}
+
+\textbf{Exemple concret d'enfilage :}
+Considérons \texttt{MAX = 5} et une file initialisée :
 \begin{lstlisting}
 FileCirculaire *file = initialiser_file();
-enfiler(file, 10); // Ajoute 10
-enfiler(file, 20); // Ajoute 20
+// État initial: queue=0, tete=0, taille=0
+// buffer: [_, _, _, _, _]
+
+enfiler(file, 10);
+// État: queue=0, tete=1, taille=1
+// buffer: [10, _, _, _, _]
+
+enfiler(file, 20);
+// État: queue=0, tete=2, taille=2
+// buffer: [10, 20, _, _, _]
+
+enfiler(file, 30);
+enfiler(file, 40);
+enfiler(file, 50);
+// État: queue=0, tete=0, taille=5
+// buffer: [10, 20, 30, 40, 50]
+// Note: tete est revenu à 0 après (4+1)%5 = 0
+
+// Maintenant, défilons deux éléments
+defiler(file); // Retire 10
+defiler(file); // Retire 20
+// État: queue=2, tete=0, taille=3
+// buffer: [_, _, 30, 40, 50]
+
+// Enfilons de nouveaux éléments
+enfiler(file, 60);
+// État: queue=2, tete=1, taille=4
+// buffer: [60, _, 30, 40, 50]
+// L'élément 60 a réutilisé l'espace libéré !
+
+enfiler(file, 70);
+// État: queue=2, tete=2, taille=5
+// buffer: [60, 70, 30, 40, 50]
+// La file est maintenant pleine
 \end{lstlisting}
 
-\subsubsection*{\texttt{defiler(file)}}
-Le retrait se fait à la \texttt{queue}.
+\subsubsection*{\texttt{defiler(file)} - Retirer un élément}
+
+L'opération de défilage consiste à retirer et retourner l'élément en tête de file (à la position \texttt{queue}).
+
+\textbf{Algorithme détaillé :}
 \begin{algorithmic}
 \If{file.taille = 0}
     \State Afficher "Erreur: File vide"
+    \State \Return Valeur d'erreur
 \Else
     \State element $\leftarrow$ file.buffer[file.queue]
-    \State file.queue $\leftarrow$ (file.queue + 1) \textbf{mod} MAX
+    \State file.queue $\leftarrow$ (file.queue + 1) \textbf{ mod } MAX
     \State file.taille $\leftarrow$ file.taille - 1
     \State \Return element
 \EndIf
 \end{algorithmic}
 
+\textbf{Analyse pas à pas de l'opération :}
+\begin{enumerate}
+    \item \textbf{Vérification de vacuité :} Nous vérifions d'abord si \texttt{taille == 0}. Une file vide ne contient aucun élément à retirer.
+    \item \textbf{Récupération :} Nous sauvegardons la valeur à la position \texttt{queue} avant de la retirer.
+    \item \textbf{Avancement circulaire :} Nous calculons la nouvelle position de \texttt{queue} avec \texttt{(queue + 1) \% MAX}. Cela fait avancer le pointeur vers le prochain élément à défiler, avec retour automatique au début si nécessaire.
+    \item \textbf{Mise à jour du compteur :} Nous décrémentons \texttt{taille} pour refléter le retrait de l'élément.
+    \item \textbf{Retour :} Nous retournons l'élément retiré à l'appelant.
+\end{enumerate}
+
+\textbf{Exemple concret de défilage :}
+Suite de l'exemple précédent où la file contient [60, 70, 30, 40, 50] avec \texttt{queue=2, tete=2, taille=5} :
+\begin{lstlisting}
+int val1 = defiler(file); // val1 = 30
+// État: queue=3, tete=2, taille=4
+// buffer: [60, 70, _, 40, 50]
+
+int val2 = defiler(file); // val2 = 40
+// État: queue=4, tete=2, taille=3
+// buffer: [60, 70, _, _, 50]
+
+int val3 = defiler(file); // val3 = 50
+// État: queue=0, tete=2, taille=2
+// buffer: [60, 70, _, _, _]
+// Note: queue est passé de 4 à 0 par (4+1)%5 = 0
+
+int val4 = defiler(file); // val4 = 60
+// État: queue=1, tete=2, taille=1
+// buffer: [_, 70, _, _, _]
+
+int val5 = defiler(file); // val5 = 70
+// État: queue=2, tete=2, taille=0
+// buffer: [_, _, _, _, _]
+// La file est maintenant vide
+\end{lstlisting}
+
+\subsubsection*{Complexité et Avantages}
+
+\textbf{Complexité temporelle :}
+\begin{itemize}
+    \item Enfiler : O(1) - temps constant
+    \item Défiler : O(1) - temps constant
+    \item Vérifier si pleine/vide : O(1) - temps constant
+\end{itemize}
+
+\textbf{Avantages du tableau circulaire :}
+\begin{itemize}
+    \item \textbf{Réutilisation optimale de l'espace :} Aucun espace mémoire n'est gaspillé
+    \item \textbf{Performance constante :} Toutes les opérations sont en O(1)
+    \item \textbf{Simplicité :} Pas besoin de réorganiser ou déplacer les éléments
+    \item \textbf{Prévisibilité :} Comportement déterministe avec une taille fixe
+\end{itemize}
+
+\textbf{Limitations :}
+\begin{itemize}
+    \item \textbf{Taille fixe :} La capacité maximale est définie à la compilation
+    \item \textbf{Rigidité :} Impossible de dépasser \texttt{MAX} éléments
+\end{itemize}
+
 \subsection{IV. Programme et Démonstration}
-Le code source complet se trouve en annexe. La fonction \texttt{demonstration\_file\_circulaire()} montre son fonctionnement.
+Le code source complet se trouve en annexe. La fonction \texttt{demonstration\_file\_circulaire()} illustre le fonctionnement pratique de la file circulaire avec des opérations d'enfilage et de défilage, démontrant la réutilisation circulaire de l'espace mémoire.
 
 \section{Problème 2 : Deux Piles dans un Tableau}
 
 \subsection{I. Analyse du Problème}
-Le second problème consiste à implémenter deux piles distinctes en n'utilisant qu'un seul tableau pour optimiser l'utilisation de l'espace.
+
+Le second problème explore une technique d'optimisation mémoire fascinante : implémenter \textbf{deux piles distinctes} en n'utilisant qu'un \textbf{seul tableau} partagé. Cette approche permet d'exploiter au maximum l'espace disponible et d'éviter le gaspillage de mémoire.
+
+\subsubsection*{La Problématique de l'Allocation Séparée}
+
+Si nous implémentions deux piles de manière traditionnelle avec deux tableaux séparés, chacun de taille \texttt{MAX}, nous rencontrerions plusieurs problèmes :
+
+\begin{itemize}
+    \item \textbf{Gaspillage de mémoire :} Si une pile utilise peu d'espace (par exemple 10\% de sa capacité) tandis que l'autre est saturée, nous ne pouvons pas redistribuer l'espace inutilisé.
+    \item \textbf{Limite rigide :} Chaque pile est limitée à \texttt{MAX} éléments, même si l'autre pile est vide.
+    \item \textbf{Inefficacité :} La mémoire totale allouée est \texttt{2 × MAX}, mais l'utilisation effective peut être bien inférieure.
+\end{itemize}
+
+\textbf{Exemple du problème :}
+Imaginons deux piles de taille MAX=100 chacune. Si la pile A contient 5 éléments et la pile B contient 95 éléments, nous avons :
+\begin{itemize}
+    \item Pile A : 5 utilisés, 95 libres (95\% de gaspillage)
+    \item Pile B : 95 utilisés, 5 libres (saturée à 95\%)
+    \item Total : 100 éléments utilisés sur 200 alloués (50\% d'efficacité)
+    \item Pile B ne peut plus croître malgré 95 cases libres dans pile A
+\end{itemize}
+
+\subsubsection*{La Solution : Croissance en Sens Opposé}
+
+L'idée ingénieuse consiste à faire croître les deux piles dans des directions opposées au sein d'un même tableau :
+
+\begin{itemize}
+    \item \textbf{Pile gauche :} Démarre à l'indice 0 et croît vers la droite (indices croissants)
+    \item \textbf{Pile droite :} Démarre à l'indice MAX-1 et croît vers la gauche (indices décroissants)
+    \item \textbf{Point de rencontre :} Les deux piles se rencontrent au milieu lorsque l'espace est saturé
+\end{itemize}
+
+\textbf{Représentation visuelle :}
+\begin{verbatim}
+Tableau initial (MAX = 10) :
+[_, _, _, _, _, _, _, _, _, _]
+ 0  1  2  3  4  5  6  7  8  9
+ ^                          ^
+ sommet_g = -1              sommet_d = 10
+
+Après empiler_g(1), empiler_g(2), empiler_g(3) :
+[1, 2, 3, _, _, _, _, _, _, _]
+ 0  1  2  3  4  5  6  7  8  9
+       ^                    ^
+       sommet_g = 2         sommet_d = 10
+
+Après empiler_d(99), empiler_d(88) :
+[1, 2, 3, _, _, _, _, _, 88, 99]
+ 0  1  2  3  4  5  6  7  8   9
+       ^                 ^
+       sommet_g = 2      sommet_d = 8
+\end{verbatim}
+
+\textbf{Avantages de cette approche :}
+\begin{itemize}
+    \item \textbf{Flexibilité dynamique :} Une pile peut utiliser jusqu'à MAX éléments si l'autre est vide
+    \item \textbf{Utilisation maximale :} L'espace total peut contenir jusqu'à MAX éléments répartis de manière variable entre les deux piles
+    \item \textbf{Efficacité :} Pas de gaspillage, chaque case peut être utilisée par l'une ou l'autre pile selon les besoins
+    \item \textbf{Économie :} Un seul tableau au lieu de deux
+\end{itemize}
+
+\subsubsection*{Rôles Distincts : Pile Principale et Pile Temporaire}
+
+Dans notre implémentation, les deux piles ont des rôles différents et complémentaires :
+
+\begin{itemize}
+    \item \textbf{Pile gauche (principale) :} Contient les données principales de l'application. C'est la pile de travail qui stocke les éléments que nous manipulons activement.
+    \item \textbf{Pile droite (temporaire/auxiliaire) :} Sert d'espace de stockage temporaire pour les opérations qui nécessitent de manipuler les éléments de la pile gauche. Elle agit comme un "buffer" ou une "zone de transit".
+\end{itemize}
+
+Cette distinction est cruciale pour comprendre certaines opérations complexes, notamment l'affichage de la pile gauche.
 
 \subsection{II. Solution Proposée}
-La solution consiste à faire croître les deux piles en sens opposé. La pile gauche part de l'indice \texttt{0} et la pile droite de \texttt{MAX-1}. La structure est :
+
+La structure \texttt{DoublePile} encapsule un tableau unique et deux pointeurs de sommet :
+
 \begin{lstlisting}
 typedef struct DoublePile
 {
-    int tab[MAX];
-    int sommet_g; // Sommet de la pile gauche
-    int sommet_d; // Sommet de la pile droite
+    int tab[MAX];      // Tableau unique partagé
+    int sommet_g;      // Sommet de la pile gauche
+    int sommet_d;      // Sommet de la pile droite
 } DoublePile;
 \end{lstlisting}
 
-\subsection{III. Algorithmes et Exemples}
-Une pile est une structure de données de type \textbf{dernier entré, premier sorti (LIFO)}.
+\textbf{Initialisation de la structure :}
+\begin{itemize}
+    \item \texttt{sommet\_g = -1} : La pile gauche est vide, le prochain empilage se fera à l'indice 0
+    \item \texttt{sommet\_d = MAX} : La pile droite est vide, le prochain empilage se fera à l'indice MAX-1
+    \item \texttt{tab[MAX]} : Le tableau est alloué mais non initialisé (les valeurs seront écrites lors des empilages)
+\end{itemize}
 
-\subsubsection*{\texttt{empiler\_g(pile, valeur)}}
+\textbf{Invariants de la structure :}
+\begin{itemize}
+    \item \texttt{-1 <= sommet\_g < MAX}
+    \item \texttt{0 < sommet\_d <= MAX}
+    \item \texttt{sommet\_g < sommet\_d} (les piles ne se chevauchent jamais)
+    \item Pile gauche vide : \texttt{sommet\_g == -1}
+    \item Pile droite vide : \texttt{sommet\_d == MAX}
+    \item Piles pleines : \texttt{sommet\_g + 1 == sommet\_d} (plus d'espace entre les deux sommets)
+\end{itemize}
+
+\subsection{III. Algorithmes et Exemples}
+
+Une pile est une structure de données de type \textbf{dernier entré, premier sorti (LIFO)}. Le dernier élément ajouté est le premier à être retiré, comme une pile d'assiettes.
+
+\subsubsection*{\texttt{empiler\_g(pile, valeur)} - Empiler à gauche}
+
+L'opération d'empilage à gauche ajoute un élément au sommet de la pile gauche.
+
+\textbf{Algorithme détaillé :}
 \begin{algorithmic}
 \If{pile.sommet\_g + 1 = pile.sommet\_d}
-    \State Afficher "Erreur: Piles pleines"
+    \State Afficher "Erreur: Piles pleines (pas d'espace entre les sommets)"
+    \State \Return Échec
 \Else
     \State pile.sommet\_g $\leftarrow$ pile.sommet\_g + 1
     \State pile.tab[pile.sommet\_g] $\leftarrow$ valeur
+    \State \Return Succès
 \EndIf
 \end{algorithmic}
-Exemple d'utilisation :
+
+\textbf{Analyse pas à pas :}
+\begin{enumerate}
+    \item \textbf{Vérification de saturation :} Nous vérifions si \texttt{sommet\_g + 1 == sommet\_d}. Cette condition signifie qu'il n'y a plus d'espace libre entre les deux piles. Si le prochain indice de la pile gauche (sommet\_g + 1) rencontre le sommet de la pile droite (sommet\_d), le tableau est complètement occupé.
+    \item \textbf{Incrémentation du sommet :} Nous avançons d'abord le pointeur \texttt{sommet\_g} vers la droite (++sommet\_g)
+    \item \textbf{Insertion :} Nous plaçons la valeur à la nouvelle position du sommet
+\end{enumerate}
+
+\textbf{Exemple concret :}
 \begin{lstlisting}
 DoublePile *pile = initialiser_dp();
-empiler_g(pile, 5);  // Ajoute 5 a gauche
-empiler_d(pile, 99); // Ajoute 99 a droite
+// État initial: sommet_g=-1, sommet_d=10
+// tab: [_, _, _, _, _, _, _, _, _, _]
+
+empiler_g(pile, 5);
+// État: sommet_g=0, sommet_d=10
+// tab: [5, _, _, _, _, _, _, _, _, _]
+
+empiler_g(pile, 10);
+// État: sommet_g=1, sommet_d=10
+// tab: [5, 10, _, _, _, _, _, _, _, _]
+
+empiler_g(pile, 15);
+// État: sommet_g=2, sommet_d=10
+// tab: [5, 10, 15, _, _, _, _, _, _, _]
 \end{lstlisting}
 
+\subsubsection*{\texttt{empiler\_d(pile, valeur)} - Empiler à droite}
+
+L'opération d'empilage à droite ajoute un élément au sommet de la pile droite (pile temporaire).
+
+\textbf{Algorithme détaillé :}
+\begin{algorithmic}
+\If{pile.sommet\_g + 1 = pile.sommet\_d}
+    \State Afficher "Erreur: Piles pleines"
+    \State \Return Échec
+\Else
+    \State pile.sommet\_d $\leftarrow$ pile.sommet\_d - 1
+    \State pile.tab[pile.sommet\_d] $\leftarrow$ valeur
+    \State \Return Succès
+\EndIf
+\end{algorithmic}
+
+\textbf{Analyse pas à pas :}
+\begin{enumerate}
+    \item \textbf{Vérification de saturation :} Même condition que pour la pile gauche
+    \item \textbf{Décrémentation du sommet :} Nous reculons le pointeur \texttt{sommet\_d} vers la gauche (--sommet\_d)
+    \item \textbf{Insertion :} Nous plaçons la valeur à la nouvelle position du sommet
+\end{enumerate}
+
+\textbf{Exemple d'empilage mixte :}
+\begin{lstlisting}
+// Suite de l'exemple précédent
+// État: sommet_g=2, sommet_d=10
+// tab: [5, 10, 15, _, _, _, _, _, _, _]
+
+empiler_d(pile, 99);
+// État: sommet_g=2, sommet_d=9
+// tab: [5, 10, 15, _, _, _, _, _, _, 99]
+
+empiler_d(pile, 88);
+// État: sommet_g=2, sommet_d=8
+// tab: [5, 10, 15, _, _, _, _, _, 88, 99]
+
+empiler_g(pile, 20);
+empiler_g(pile, 25);
+// État: sommet_g=4, sommet_d=8
+// tab: [5, 10, 15, 20, 25, _, _, _, 88, 99]
+//      <--pile_g-->  libres  <--pile_d-->
+\end{lstlisting}
+
+\subsubsection*{\texttt{depiler\_g(pile)} et \texttt{depiler\_d(pile)} - Dépiler}
+
+Les opérations de dépilage retirent et retournent l'élément au sommet de la pile respective.
+
+\textbf{Algorithmes :}
+\begin{algorithmic}
+\State \textbf{depiler\_g :}
+\If{pile.sommet\_g = -1}
+    \State Afficher "Erreur: Pile gauche vide"
+    \State \Return Valeur d'erreur
+\Else
+    \State element $\leftarrow$ pile.tab[pile.sommet\_g]
+    \State pile.sommet\_g $\leftarrow$ pile.sommet\_g - 1
+    \State \Return element
+\EndIf
+\State
+\State \textbf{depiler\_d :}
+\If{pile.sommet\_d = MAX}
+    \State Afficher "Erreur: Pile droite vide"
+    \State \Return Valeur d'erreur
+\Else
+    \State element $\leftarrow$ pile.tab[pile.sommet\_d]
+    \State pile.sommet\_d $\leftarrow$ pile.sommet\_d + 1
+    \State \Return element
+\EndIf
+\end{algorithmic}
+
+\subsubsection*{\texttt{afficher\_pile\_gauche(pile)} - Le Rôle Clé de la Pile Temporaire}
+
+Cette fonction illustre parfaitement l'utilisation de la pile droite comme \textbf{pile temporaire} pour effectuer des opérations sur la pile gauche principale. C'est un exemple classique d'utilisation d'une structure auxiliaire pour manipuler une pile sans perdre d'information.
+
+\textbf{Problématique :} Comment afficher tous les éléments d'une pile dans leur ordre d'empilage (du bas vers le haut) tout en préservant la pile dans son état initial ? Une pile ne permet l'accès qu'au sommet, donc pour voir les éléments du bas, nous devons les dépiler.
+
+\textbf{Solution en trois phases :}
+
+\textbf{Phase 1 - Transfert et affichage :}
+\begin{algorithmic}
+\State \textbf{Précondition :} La pile droite doit être vide
+\While{pile\_gauche non vide}
+    \State element $\leftarrow$ depiler\_g(pile)
+    \State Afficher element
+    \State empiler\_d(pile, element)
+\EndWhile
+\end{algorithmic}
+
+\textbf{Explication détaillée de la Phase 1 :}
+\begin{itemize}
+    \item Nous défilons chaque élément de la pile gauche un par un
+    \item En dépilant, nous obtenons les éléments du sommet vers le bas (ordre inverse d'empilage)
+    \item Immédiatement après affichage, nous empilons chaque élément dans la pile droite
+    \item La pile droite sert de "mémoire temporaire" pour ne pas perdre les éléments
+    \item À la fin, la pile gauche est vide et tous ses éléments sont dans la pile droite (dans l'ordre inverse)
+\end{itemize}
+
+\textbf{Phase 2 - Restauration :}
+\begin{algorithmic}
+\While{pile\_droite non vide}
+    \State element $\leftarrow$ depiler\_d(pile)
+    \State empiler\_g(pile, element)
+\EndWhile
+\end{algorithmic}
+
+\textbf{Explication détaillée de la Phase 2 :}
+\begin{itemize}
+    \item Nous transférons tous les éléments de la pile droite vers la pile gauche
+    \item En dépilant de la droite et empilant à gauche, nous inversons à nouveau l'ordre
+    \item Résultat : la pile gauche retrouve exactement son état initial
+    \item La pile droite redevient vide, prête pour une prochaine utilisation
+\end{itemize}
+
+\textbf{Exemple complet d'affichage :}
+\begin{lstlisting}
+DoublePile *pile = initialiser_dp();
+
+// Construction de la pile principale
+empiler_g(pile, 1);
+empiler_g(pile, 2);
+empiler_g(pile, 3);
+empiler_g(pile, 10);
+
+// État initial:
+// sommet_g=3, sommet_d=10
+// tab: [1, 2, 3, 10, _, _, _, _, _, _]
+//       <---pile_g--->
+
+// Appel de afficher_pile_gauche(pile)
+
+// === PHASE 1 : Transfert et affichage ===
+// Itération 1:
+//   depiler_g() retourne 10, affiche "10 "
+//   empiler_d(10)
+//   État: [1, 2, 3, _, _, _, _, _, _, 10]
+//          sommet_g=2           sommet_d=9
+
+// Itération 2:
+//   depiler_g() retourne 3, affiche "3 "
+//   empiler_d(3)
+//   État: [1, 2, _, _, _, _, _, _, 3, 10]
+//          sommet_g=1           sommet_d=8
+
+// Itération 3:
+//   depiler_g() retourne 2, affiche "2 "
+//   empiler_d(2)
+//   État: [1, _, _, _, _, _, _, 2, 3, 10]
+//          sommet_g=0           sommet_d=7
+
+// Itération 4:
+//   depiler_g() retourne 1, affiche "1 "
+//   empiler_d(1)
+//   État: [_, _, _, _, _, _, 1, 2, 3, 10]
+//          sommet_g=-1          sommet_d=6
+
+// Affichage produit: "10 3 2 1 "
+// Pile gauche maintenant vide, pile droite contient tous les éléments
+
+// === PHASE 2 : Restauration ===
+// Itération 1:
+//   depiler_d() retourne 1
+//   empiler_g(1)
+//   État: [1, _, _, _, _, _, _, 2, 3, 10]
+//          sommet_g=0           sommet_d=7
+
+// Itération 2:
+//   depiler_d() retourne 2
+//   empiler_g(2)
+//   État: [1, 2, _, _, _, _, _, _, 3, 10]
+//          sommet_g=1           sommet_d=8
+
+// Itération 3:
+//   depiler_d() retourne 3
+//   empiler_g(3)
+//   État: [1, 2, 3, _, _, _, _, _, _, 10]
+//          sommet_g=2           sommet_d=9
+
+// Itération 4:
+//   depiler_d() retourne 10
+//   empiler_g(10)
+//   État: [1, 2, 3, 10, _, _, _, _, _, _]
+//          sommet_g=3           sommet_d=10
+
+// État final: identique à l'état initial !
+// La pile gauche a été restaurée complètement
+\end{lstlisting}
+
+\textbf{Pourquoi la pile droite est-elle essentielle ?}
+\begin{enumerate}
+    \item \textbf{Conservation des données :} Sans pile temporaire, nous perdrions les éléments lors du dépilage
+    \item \textbf{Préservation de l'ordre :} La double inversion (gauche→droite→gauche) restaure l'ordre original
+    \item \textbf{Non-destructivité :} L'opération d'affichage ne modifie pas l'état final de la pile
+    \item \textbf{Efficacité :} Toutes les opérations sont en O(n) avec n le nombre d'éléments
+\end{enumerate}
+
+\textbf{Contrainte importante :}
+La fonction vérifie que la pile droite est vide avant de commencer (\texttt{if (!est\_vide\_d(*p)) return}). Cette contrainte est nécessaire car :
+\begin{itemize}
+    \item Si la pile droite contient déjà des données, le transfert mélangerait ces données avec celles de la pile gauche
+    \item Nous perdrions la traçabilité de quels éléments appartiennent à quelle pile
+    \item La restauration serait incorrecte
+\end{itemize}
+
+\subsubsection*{Complexité et Avantages}
+
+\textbf{Complexité temporelle :}
+\begin{itemize}
+    \item Empiler (gauche ou droite) : O(1)
+    \item Dépiler (gauche ou droite) : O(1)
+    \item Afficher pile gauche : O(n) où n est le nombre d'éléments dans la pile gauche
+    \item Vérifier si vide/plein : O(1)
+\end{itemize}
+
+\textbf{Complexité spatiale :}
+\begin{itemize}
+    \item Mémoire utilisée : O(MAX) pour un seul tableau
+    \item Comparé à deux piles séparées : économie de 50\% potentielle
+    \item Flexibilité : distribution variable entre les deux piles selon les besoins
+\end{itemize}
+
+\textbf{Avantages de l'approche double pile :}
+\begin{itemize}
+    \item \textbf{Efficacité spatiale maximale :} Un seul tableau pour deux piles
+    \item \textbf{Flexibilité dynamique :} Répartition adaptative de l'espace
+    \item \textbf{Performance constante :} Opérations de base en O(1)
+    \item \textbf{Polyvalence :} La pile temporaire permet des opérations complexes
+\end{itemize}
+
+\textbf{Cas d'utilisation pratiques :}
+\begin{itemize}
+    \item \textbf{Évaluation d'expressions :} Une pile pour les opérandes, une pour les opérateurs
+    \item \textbf{Parcours d'arbres :} Une pile pour l'exploration, une pour les résultats
+    \item \textbf{Algorithmes avec annulation :} Une pile principale, une pile d'historique
+    \item \textbf{Gestion de mémoire limitée :} Systèmes embarqués avec contraintes mémoire
+\end{itemize}
+
 \subsection{IV. Programme et Démonstration}
-Le code de la \texttt{DoublePile} est également en annexe. La fonction \texttt{demonstration\_double\_pile()} illustre son utilisation.
+
+Le code source complet de la \texttt{DoublePile} se trouve en annexe. La fonction \texttt{demonstration\_double\_pile()} illustre de manière pratique :
+\begin{itemize}
+    \item L'empilage d'éléments dans la pile gauche (principale)
+    \item L'affichage de la pile avec utilisation de la pile droite comme temporaire
+    \item Le dépilage d'éléments
+    \item La restauration automatique de la pile après affichage
+\end{itemize}
+
+Cette démonstration met en évidence l'interaction intelligente entre les deux piles et la puissance de l'approche avec pile auxiliaire pour effectuer des opérations complexes tout en préservant l'intégrité des données.
 
 \newpage
 \appendix
