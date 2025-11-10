@@ -608,14 +608,7 @@ Si nous implémentions deux piles de manière traditionnelle avec deux tableaux 
     \item \textbf{Inefficacité :} La mémoire totale allouée est \texttt{2 × MAX}, mais l'utilisation effective peut être bien inférieure.
 \end{itemize}
 
-\textbf{Exemple du problème :}
-Imaginons deux piles de taille MAX=100 chacune. Si la pile A contient 5 éléments et la pile B contient 95 éléments, nous avons :
-\begin{itemize}
-    \item Pile A : 5 utilisés, 95 libres (95\% de gaspillage)
-    \item Pile B : 95 utilisés, 5 libres (saturée à 95\%)
-    \item Total : 100 éléments utilisés sur 200 alloués (50\% d'efficacité)
-    \item Pile B ne peut plus croître malgré 95 cases libres dans pile A
-\end{itemize}
+
 
 \subsubsection*{La Solution : Croissance en Sens Opposé}
 
