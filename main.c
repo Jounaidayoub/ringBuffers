@@ -203,6 +203,156 @@ void afficher_pile_gauche(DoublePile *p)
 }
 
 // =================================================================================
+// Probleme 3 : Liste implementee avec un tableau circulaire
+// =================================================================================
+
+typedef struct {
+    int Tab[MAX];
+    int tete;      // Index du premier element
+    int nombre;    // Nombre d'elements dans la liste
+} Liste;
+
+// Creer une liste
+Liste* Creer_Liste() {
+    Liste* l = (Liste*)malloc(sizeof(Liste));
+    if (!l) {
+        printf("Erreur d'allocation memoire\n");
+        exit(-1);
+    }
+    return l;
+}
+
+// Initialiser la liste
+int Init_Liste(Liste* l) {
+    if (!l) {
+        printf("Liste n'existe pas\n");
+        return((int)0);
+    }
+    l->tete = 0;
+    l->nombre = 0;
+    return((int)1);
+}
+
+// Verifier si la liste est vide
+int Est_Vide_Liste(Liste l) {
+    return((int)(l.nombre == 0));
+}
+
+// Verifier si la liste est pleine
+int Est_Pleine_Liste(Liste l) {
+    return((int)(l.nombre == MAX));
+}
+
+// Taille de la liste
+int Taille_Liste(Liste l) {
+    return((int)l.nombre);
+}
+
+// Inserer à la position i
+int Inserer_Liste(Liste* l, int i, int valeur) {
+    if (!l) {
+        printf("Liste n'existe pas\n");
+        return((int)0);
+    }
+
+    if (i < 0 || i > l->nombre) {
+        printf("Position invalide\n");
+        return((int)0);
+    }
+
+    if (Est_Pleine_Liste(*l)) {
+        printf("Liste pleine\n");
+        return((int)0);
+    }
+
+    // Cas 1: Insertion en tete
+    if (i == 0) {
+        l->tete = (l->tete - 1 + MAX) % MAX;
+        l->Tab[l->tete] = valeur;
+        l->nombre++;
+        return((int)1);
+    }
+
+    // Cas 2: Insertion en queue
+    if (i == l->nombre) {
+        int pos = (l->tete + l->nombre) % MAX;
+        l->Tab[pos] = valeur;
+        l->nombre++;
+        return((int)1);
+    }
+
+    // Cas 3: Insertion au milieu - decaler vers la droite
+    int j;
+    for (j = l->nombre - 1; j >= i; j--) {
+        int pos_actuelle = (l->tete + j) % MAX;
+        int pos_suivante = (l->tete + j + 1) % MAX;
+        l->Tab[pos_suivante] = l->Tab[pos_actuelle];
+    }
+
+    int pos = (l->tete + i) % MAX;
+    l->Tab[pos] = valeur;
+    l->nombre++;
+    return((int)1);
+}
+
+// Supprimer à la position i
+int Supprimer_Liste(Liste* l, int i) {
+    if (!l) {
+        printf("Liste n'existe pas\n");
+        return((int)0);
+    }
+
+    if (Est_Vide_Liste(*l)) {
+        printf("Liste vide\n");
+        return((int)0);
+    }
+
+    if (i < 0 || i >= l->nombre) {
+        printf("Position invalide\n");
+        return((int)0);
+    }
+
+    // Cas 1: Suppression en tete
+    if (i == 0) {
+        l->tete = (l->tete + 1) % MAX;
+        l->nombre--;
+        return((int)1);
+    }
+
+    // Cas 2: Suppression ailleurs - decaler vers la gauche
+    int j;
+    for (j = i; j < l->nombre - 1; j++) {
+        int pos_actuelle = (l->tete + j) % MAX;
+        int pos_suivante = (l->tete + j + 1) % MAX;
+        l->Tab[pos_actuelle] = l->Tab[pos_suivante];
+    }
+
+    l->nombre--;
+    return((int)1);
+}
+
+// Afficher la liste
+void Afficher_Liste(Liste l) {
+    if (Est_Vide_Liste(l)) {
+        printf("Liste vide\n");
+        return;
+    }
+
+    printf("\nContenu de la liste:\n");
+    printf("[ ");
+
+    int i;
+    for (i = 0; i < l.nombre; i++) {
+        int pos = (l.tete + i) % MAX;
+        printf("%d ", l.Tab[pos]);
+    }
+
+    printf("]\n");
+    printf("Tete=%d, Nombre=%d\n", l.tete, l.nombre);
+}
+
+
+// =================================================================================
 // Demonstrations
 // =================================================================================
 
@@ -247,9 +397,42 @@ void demonstration_double_pile()
     printf("--- Fin de la Demonstration ---\n");
 }
 
+void demonstration_liste_circulaire()
+{
+    printf("\n--- Demonstration de la Liste Circulaire ---\n");
+    Liste* l = Creer_Liste();
+    Init_Liste(l);
+
+    printf("\n*** Insertion de 10, 20, 30 en queue ***\n");
+    Inserer_Liste(l, 0, 10);
+    Inserer_Liste(l, 1, 20);
+    Inserer_Liste(l, 2, 30);
+    Afficher_Liste(*l);
+
+    printf("\n*** Insertion de 5 en tete (pos 0) ***\n");
+    Inserer_Liste(l, 0, 5);
+    Afficher_Liste(*l);
+
+    printf("\n*** Insertion de 25 au milieu (pos 2) ***\n");
+    Inserer_Liste(l, 2, 25);
+    Afficher_Liste(*l);
+
+    printf("\n*** Suppression en tete (pos 0) ***\n");
+    Supprimer_Liste(l, 0);
+    Afficher_Liste(*l);
+
+    printf("\n*** Suppression au milieu (pos 1) ***\n");
+    Supprimer_Liste(l, 1);
+    Afficher_Liste(*l);
+
+    free(l);
+    printf("--- Fin de la Demonstration ---\n");
+}
+
 int main(void)
 {
     demonstration_file_circulaire();
     demonstration_double_pile();
+    demonstration_liste_circulaire();
     return 0;
 }

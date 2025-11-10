@@ -592,6 +592,50 @@ enfiler(file, 70);
 \subsection{IV. Programme et Démonstration}
 Le code source complet se trouve en annexe. La fonction \texttt{demonstration\_file\_circulaire()} illustre le fonctionnement pratique de la file circulaire avec des opérations d'enfilage et de défilage, démontrant la réutilisation circulaire de l'espace mémoire.
 
+\subsection{V. La Liste Circulaire:}
+
+En plus de la file, le concept de tableau circulaire peut être étendu pour implémenter une \textbf{liste}. Une liste offre plus de flexibilité que la file, permettant des insertions et des suppressions à n'importe quelle position, pas seulement aux extrémités. L'utilisation d'un tableau circulaire pour une liste est particulièrement efficace pour les opérations en tête de liste, qui sont coûteuses dans une implémentation avec un tableau linéaire classique.
+
+\subsubsection*{La Problématique de la Liste Linéaire}
+Dans une liste basée sur un tableau linéaire, l'insertion ou la suppression d'un élément en tête (à l'indice 0) est une opération de complexité O(n), car elle nécessite de décaler tous les autres éléments du tableau. Le tableau circulaire résout ce problème en permettant à la "tête" de la liste de se déplacer, rendant les opérations en début de liste beaucoup plus performantes (O(1)).
+
+\subsubsection*{Solution Proposée}
+La structure de la liste circulaire est similaire à celle de la file, mais la logique des opérations est adaptée pour gérer des insertions/suppressions à des positions arbitraires.
+
+\begin{lstlisting}
+typedef struct {
+    int Tab[MAX];
+    int tete;      // Index du premier élément
+    int nombre;    // Nombre d'éléments dans la liste
+} Liste;
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{tete} : Pointeur vers le premier élément de la liste.
+    \item \texttt{nombre} : Nombre total d'éléments dans la liste.
+\end{itemize}
+
+\subsubsection*{Algorithmes d'Insertion et de Suppression}
+
+\textbf{Opération \texttt{Inserer\_Liste(liste, i, valeur)} :}
+L'insertion dans une liste circulaire distingue trois cas :
+
+\begin{enumerate}
+    \item \textbf{Insertion en tête (i=0)} : C'est le cas le plus efficace. Au lieu de décaler tous les éléments, on déplace simplement le pointeur \texttt{tete} vers l'arrière (avec gestion circulaire via modulo) et on insère le nouvel élément. Cette opération est en O(1).
+    \item \textbf{Insertion en queue (i=nombre)} : L'élément est ajouté à la fin de la liste. La position est calculée par rapport à la \texttt{tete}. L'opération est également en O(1).
+    \item \textbf{Insertion au milieu} : Pour insérer un élément à une position intermédiaire, il faut décaler les éléments situés entre cette position et la fin de la liste pour faire de la place. Cette opération reste en O(n) dans le pire des cas.
+\end{enumerate}
+
+\textbf{Opération \texttt{Supprimer\_Liste(liste, i)} :}
+La suppression suit une logique similaire :
+
+\begin{enumerate}
+    \item \textbf{Suppression en tête (i=0)} : Très performante. On avance simplement le pointeur \texttt{tete} d'une position. L'opération est en O(1).
+    \item \textbf{Suppression ailleurs} : Pour supprimer un élément à une autre position, les éléments suivants doivent être décalés vers la gauche pour combler le vide. Cette opération est de complexité O(n).
+\end{enumerate}
+
+L'avantage principal de cette structure est donc la performance gagnée pour les manipulations en début de liste, qui sont des opérations fréquentes dans de nombreux algorithmes.
+
 \section{Problème 2 : Deux Piles dans un Tableau}
 
 \subsection{I. Analyse du Problème}
