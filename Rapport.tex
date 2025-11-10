@@ -491,11 +491,12 @@ typedef struct FileCirculaire
 
 Une file est une structure de données de type \textbf{premier entré, premier sorti (FIFO)}. Le premier élément ajouté est le premier à être retiré, comme une file d'attente dans la vie réelle.
 
-\subsubsection*{\texttt{enfiler(file, valeur)} - Ajouter un élément}
+\subsubsection*{Les opérations \texttt{enfiler} et \texttt{defiler}}
 
+\textbf{Opération \texttt{enfiler(file, valeur)} :}
 L'opération d'enfilage consiste à ajouter un nouvel élément à l'arrière de la file (à la position \texttt{tete}).
 
-\textbf{Algorithme détaillé :}
+\textbf{Algorithme :}
 \begin{algorithmic}
 \If{file.taille = MAX}
     \State Afficher "Erreur: File pleine"
@@ -508,16 +509,25 @@ L'opération d'enfilage consiste à ajouter un nouvel élément à l'arrière de
 \EndIf
 \end{algorithmic}
 
-\textbf{Analyse pas à pas de l'opération :}
-\begin{enumerate}
-    \item \textbf{Vérification de saturation :} Avant toute modification, nous vérifions si \texttt{taille == MAX}. Si c'est le cas, le tableau est complètement rempli et nous ne pouvons pas ajouter d'élément sans écraser des données existantes.
-    \item \textbf{Insertion :} Nous plaçons la nouvelle valeur à la position \texttt{tete}
-    \item \textbf{Avancement circulaire :} Nous calculons la nouvelle position de \texttt{tete} avec \texttt{(tete + 1) \% MAX}. Cette opération modulo assure que si \texttt{tete} était à \texttt{MAX-1}, elle revient à 0.
-    \item \textbf{Mise à jour du compteur :} Nous incrémentons \texttt{taille} pour refléter l'ajout du nouvel élément.
-\end{enumerate}
+\textbf{Opération \texttt{defiler(file)} :}
+L'opération de défilage consiste à retirer et retourner l'élément en tête de file (à la position \texttt{queue}).
 
-\textbf{Exemple concret d'enfilage :}
-Considérons \texttt{MAX = 5} et une file initialisée :
+\textbf{Algorithme :}
+\begin{algorithmic}
+\If{file.taille = 0}
+    \State Afficher "Erreur: File vide"
+    \State \Return Valeur d'erreur
+\Else
+    \State element $\leftarrow$ file.buffer[file.queue]
+    \State file.queue $\leftarrow$ (file.queue + 1) \textbf{ mod } MAX
+    \State file.taille $\leftarrow$ file.taille - 1
+    \State \Return element
+\EndIf
+\end{algorithmic}
+
+\textbf{Exemple complet illustrant les deux opérations :}
+Considérons \texttt{MAX = 5} et une file initialisée. Cet exemple montre comment la file circulaire permet de réutiliser l'espace libéré par les opérations de défilage :
+
 \begin{lstlisting}
 FileCirculaire *file = initialiser_file();
 // État initial: queue=0, tete=0, taille=0
@@ -554,58 +564,6 @@ enfiler(file, 70);
 // État: queue=2, tete=2, taille=5
 // buffer: [60, 70, 30, 40, 50]
 // La file est maintenant pleine
-\end{lstlisting}
-
-\subsubsection*{\texttt{defiler(file)} - Retirer un élément}
-
-L'opération de défilage consiste à retirer et retourner l'élément en tête de file (à la position \texttt{queue}).
-
-\textbf{Algorithme détaillé :}
-\begin{algorithmic}
-\If{file.taille = 0}
-    \State Afficher "Erreur: File vide"
-    \State \Return Valeur d'erreur
-\Else
-    \State element $\leftarrow$ file.buffer[file.queue]
-    \State file.queue $\leftarrow$ (file.queue + 1) \textbf{ mod } MAX
-    \State file.taille $\leftarrow$ file.taille - 1
-    \State \Return element
-\EndIf
-\end{algorithmic}
-
-\textbf{Analyse pas à pas de l'opération :}
-\begin{enumerate}
-    \item \textbf{Vérification de vacuité :} Nous vérifions d'abord si \texttt{taille == 0}. Une file vide ne contient aucun élément à retirer.
-    \item \textbf{Récupération :} Nous sauvegardons la valeur à la position \texttt{queue} avant de la retirer.
-    \item \textbf{Avancement circulaire :} Nous calculons la nouvelle position de \texttt{queue} avec \texttt{(queue + 1) \% MAX}. Cela fait avancer le pointeur vers le prochain élément à défiler, avec retour automatique au début si nécessaire.
-    \item \textbf{Mise à jour du compteur :} Nous décrémentons \texttt{taille} pour refléter le retrait de l'élément.
-    \item \textbf{Retour :} Nous retournons l'élément retiré à l'appelant.
-\end{enumerate}
-
-\textbf{Exemple concret de défilage :}
-Suite de l'exemple précédent où la file contient [60, 70, 30, 40, 50] avec \texttt{queue=2, tete=2, taille=5} :
-\begin{lstlisting}
-int val1 = defiler(file); // val1 = 30
-// État: queue=3, tete=2, taille=4
-// buffer: [60, 70, _, 40, 50]
-
-int val2 = defiler(file); // val2 = 40
-// État: queue=4, tete=2, taille=3
-// buffer: [60, 70, _, _, 50]
-
-int val3 = defiler(file); // val3 = 50
-// État: queue=0, tete=2, taille=2
-// buffer: [60, 70, _, _, _]
-// Note: queue est passé de 4 à 0 par (4+1)%5 = 0
-
-int val4 = defiler(file); // val4 = 60
-// État: queue=1, tete=2, taille=1
-// buffer: [_, 70, _, _, _]
-
-int val5 = defiler(file); // val5 = 70
-// État: queue=2, tete=2, taille=0
-// buffer: [_, _, _, _, _]
-// La file est maintenant vide
 \end{lstlisting}
 
 \subsubsection*{Complexité et Avantages}
